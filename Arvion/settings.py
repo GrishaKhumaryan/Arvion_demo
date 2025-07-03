@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",  # Ավելացված է
     "django.contrib.staticfiles",
     "main.apps.MainConfig",
+    "main",
 ]
 
 MIDDLEWARE = [
