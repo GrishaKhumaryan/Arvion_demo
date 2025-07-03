@@ -1,8 +1,4 @@
 import os
-import cv2
-import pickle
-import numpy as np
-import mediapipe as mp
 from django.urls import reverse
 import qrcode
 import base64
@@ -14,7 +10,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from .models import CustomUser, PatientCondition, PatientMedication, PatientSurgery
-from .management.commands.train_face_model import extract_embedding 
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 import json
@@ -302,6 +297,10 @@ def find_hospital(request):
     return render(request, 'find_hospital.html', context)
 
 def recognize_face(image_data):
+    import cv2
+    import pickle
+    import numpy as np
+    from .management.commands.train_face_model import extract_embedding
     model_dir = os.path.join(settings.BASE_DIR, 'face_models')
     
     model_path = os.path.join(model_dir, "face_classifier.pkl")
