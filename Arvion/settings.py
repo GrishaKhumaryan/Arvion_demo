@@ -11,7 +11,6 @@ SECRET_KEY = os.environ.get(
     "SECRET_KEY", "default-insecure-key-for-local-development"
 )
 
-# DEBUG ռեժիմը կարդում ենք միջավայրի փոփոխականից։ Render-ում սա կլինի False։
 DEBUG = os.environ.get("DEBUG", "0") == "1"
 
 ALLOWED_HOSTS = ["arvion-demo.onrender.com", "18.156.158.53"]
@@ -22,7 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "whitenoise.runserver_nostatic",  # Ավելացված է
+    "whitenoise.runserver_nostatic",  
     "django.contrib.staticfiles",
     "main.apps.MainConfig",
 ]
@@ -84,7 +83,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# API բանալին տեղափոխված է միջավայրի փոփոխական
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
 
 STATIC_URL = "/static/"
