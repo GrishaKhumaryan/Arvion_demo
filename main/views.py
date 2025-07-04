@@ -13,6 +13,7 @@ from .models import CustomUser, PatientCondition, PatientMedication, PatientSurg
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 import json
+import datetime # Ավելացվել է այս import-ը train_model_trigger-ի համար
 from .models import (
     CustomUser, 
     DoctorProfile, 
@@ -162,6 +163,7 @@ def settings_view(request):
     if request.method == "POST":
         try:
             with transaction.atomic():
+                # Step 1: Update user text fields
                 user_to_update.first_name = request.POST.get("first_name", user_to_update.first_name)
                 user_to_update.last_name = request.POST.get("last_name", user_to_update.last_name)
                 user_to_update.date_of_birth = request.POST.get("date_of_birth") or None
@@ -170,10 +172,26 @@ def settings_view(request):
                 user_to_update.emergency_contact_phone = request.POST.get("emergency_contact_phone", user_to_update.emergency_contact_phone)
                 user_to_update.address = request.POST.get("address", user_to_update.address)
                 
+                # Step 2: Handle profile picture upload
                 if "profile_picture" in request.FILES:
                     user_to_update.profile_picture = request.FILES["profile_picture"]
+                
+                # Step 3: First save to upload the image to Cloudinary
+                # Առաջին պահպանումը վերբեռնում է նկարը Cloudinary և թարմացնում է մյուս դաշտերը։
                 user_to_update.save()
 
+                # Step 4: After saving, get the Cloudinary URL and save it to the `profile_image_url` field
+                # Առաջին պահպանումից հետո .url ատրիբուտը արդեն կպարունակի Cloudinary-ի հղումը։
+                if user_to_update.profile_picture:
+                    # We check if the URL needs updating to avoid a redundant database write.
+                    # Ստուգում ենք՝ արդյոք URL-ը պետք է թարմացվի, որպեսզի զուր չպահպանենք։
+                    if user_to_update.profile_image_url != user_to_update.profile_picture.url:
+                        user_to_update.profile_image_url = user_to_update.profile_picture.url
+                        # Second, efficient save just for the URL field.
+                        # Երկրորդ, արդյունավետ պահպանում՝ միայն URL դաշտը թարմացնելու համար։
+                        user_to_update.save(update_fields=['profile_image_url'])
+
+                # Step 5: Update related profiles (Doctor/Patient)
                 if doctor_profile:
                     doctor_profile.specialty = request.POST.get("specialty", doctor_profile.specialty)
                     doctor_profile.license_number = request.POST.get("license_number", doctor_profile.license_number)
@@ -186,7 +204,7 @@ def settings_view(request):
                     patient_profile.weight_kg = request.POST.get("weight_kg") or None
                     patient_profile.height_cm = request.POST.get("height_cm") or None
                     patient_profile.other_notes = request.POST.get("other_notes", patient_profile.other_notes)
-                    patient_profile.save() 
+                    
                     allergies_text = request.POST.get("allergies_text", "")
                     allergy_names = [name.strip() for name in allergies_text.split(',') if name.strip()]
                     allergy_objs = []
@@ -215,6 +233,8 @@ def settings_view(request):
                     for name in surgery_names:
                         surg_obj, _ = Surgery.objects.get_or_create(name=name.capitalize())
                         PatientSurgery.objects.create(patient=patient_profile, surgery=surg_obj)
+
+                    patient_profile.save()
 
             messages.success(request, "Ձեր տվյալները հաջողությամբ թարմացվել են։")
             return redirect("settings")
@@ -289,6 +309,7 @@ def public_profile_view(request, profile_id):
     }
     
     return render(request, 'public_profile.html', context)
+    
 def find_hospital(request):
     context = {
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
@@ -368,7 +389,6 @@ def patient_details_view(request, user_id):
     return render(request, 'patient_details.html', context)
 
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
 from django.core.management import call_command
 
 @csrf_exempt

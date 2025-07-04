@@ -13,6 +13,13 @@ cloudinary.config(
   api_key = "716419361996157", 
   api_secret = "JoS5_jjjng6JKcpF3mWnQw2STAI" 
 )
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dhofwkbdd'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '716419361996157'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'JoS5_jjjng6JKcpF3mWnQw2STAI'),
+}
+
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,6 +41,8 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",  
     "django.contrib.staticfiles",
     "main.apps.MainConfig",
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
