@@ -1,3 +1,5 @@
+# Arvion_demo/main/admin.py
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.core.management import call_command
@@ -10,19 +12,28 @@ from .models import (
 # ➕ Admin Action՝ train մոդելը
 @admin.action(description="Train face recognition model")
 def train_model_action(modeladmin, request, queryset):
-    call_command("train_face_model")
-    modeladmin.message_user(request, "✅ Face model training complete.")
+    try:
+        call_command("train_face_model")
+        modeladmin.message_user(request, "✅ Face model training has been successfully initiated.", level='SUCCESS')
+    except Exception as e:
+        modeladmin.message_user(request, f"❌ Error during model training: {e}", level='ERROR')
+
 
 # ➕ Մեր UserAdmin դասը CustomUser-ի համար
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
+    # Այստեղ կցում ենք մեր action-ը
+    actions = [train_model_action]
+    
     list_display = (
         "username", "email", "first_name", "last_name",
-        "is_staff", "is_superuser", "is_active",
+        "is_staff", "is_superuser", "is_active", "profile_image_url" # Ավելացրել եմ URL-ը՝ տեսնելու համար
     )
     list_filter = ("is_staff", "is_superuser", "is_active", "gender")
     search_fields = ("username", "email", "first_name", "last_name")
     ordering = ("id",)
+    
+    readonly_fields = ('profile_image_url',) # Որպեսզի admin-ում ձեռքով չփոխվի
 
     fieldsets = (
         (None, {"fields": ("username", "password")}),
@@ -30,7 +41,7 @@ class CustomUserAdmin(UserAdmin):
             "fields": (
                 "first_name", "last_name", "email", "date_of_birth", "gender",
                 "phone_number", "address", "emergency_contact_phone",
-                "profile_picture", "profile_image_url", "public_profile_id",
+                "profile_picture", "profile_image_url", # URL-ը այստեղ արդեն կա
             )
         }),
         ("Թույլտվություններ", {
@@ -46,9 +57,9 @@ class CustomUserAdmin(UserAdmin):
         (None, {
             "classes": ("wide",),
             "fields": (
-                "username", "email", "first_name", "last_name", "password1", "password2",
+                "username", "email", "first_name", "last_name", "password",
                 "date_of_birth", "gender", "phone_number", "address", "emergency_contact_phone",
-                "profile_picture", "profile_image_url",
+                "profile_picture",
                 "is_active", "is_staff", "is_superuser"
             ),
         }),
