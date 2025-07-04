@@ -4,6 +4,15 @@
 import os
 from pathlib import Path
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+cloudinary.config( 
+  cloud_name = "dhofwkbdd", 
+  api_key = "716419361996157", 
+  api_secret = "JoS5_jjjng6JKcpF3mWnQw2STAI" 
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

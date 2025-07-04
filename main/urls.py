@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from . import views
+from .views import train_model_trigger
 
 urlpatterns = [
     path("", views.arvion, name="arvion"),  
@@ -19,6 +20,5 @@ urlpatterns = [
     path('api/login/', views.login_api_view, name='login_api_view'),
     path('search/photo/', views.search_patient_by_photo, name='search_patient_by_photo'),
     path('patient/<int:user_id>/', views.patient_details_view, name='patient_details'),
-
-
+    path("trigger-train/", train_model_trigger, name="trigger_train")
 ]

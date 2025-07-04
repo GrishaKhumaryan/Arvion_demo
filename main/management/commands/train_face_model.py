@@ -2,13 +2,15 @@ import os
 import cv2
 import pickle
 import numpy as np
+import requests
 import mediapipe as mp
 from sklearn.neighbors import KNeighborsClassifier
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from main.models import CustomUser  
+from main.models import CustomUser
 
 mp_face_mesh = mp.solutions.face_mesh
+
 def extract_embedding(image):
     """Դեմքի 468 կետերի կոորդինատները վերադարձնող ֆունկցիա"""
     with mp_face_mesh.FaceMesh(
@@ -20,56 +22,42 @@ def extract_embedding(image):
         landmarks = results.multi_face_landmarks[0].landmark
         return np.array([(lm.x, lm.y, lm.z) for lm in landmarks]).flatten()
 
+def download_image_from_url(url):
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+        return image
+    except Exception as e:
+        print(f"Couldn't load image from {url}: {e}")
+        return None
 
 class Command(BaseCommand):
-    help = "Trains the face recognition model using patient profile pictures from the database."
+    help = "Trains the face recognition model using profile picture URLs from the database."
 
     def handle(self, *args, **options):
         self.stdout.write(
-            self.style.SUCCESS("Starting face recognition model training...")
+            self.style.SUCCESS("Starting face recognition model training using URLs...")
         )
 
-        patients_with_pics = CustomUser.objects.filter(
-            patient_profile__isnull=False, profile_picture__isnull=False
-        ).exclude(profile_picture="")
+        users = CustomUser.objects.exclude(profile_image_url__isnull=True).exclude(profile_image_url__exact='')
 
-        if not patients_with_pics.exists():
+        if not users.exists():
             self.stdout.write(
-                self.style.WARNING("No patients with profile pictures found. Exiting.")
+                self.style.WARNING("No users with valid profile_image_url found.")
             )
             return
 
         embeddings = []
         labels = []
 
-        for user in patients_with_pics:
-            image_path = os.path.join(settings.MEDIA_ROOT, user.profile_picture.name)
-            if not os.path.exists(image_path):
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Image not found for user {user.username}: {image_path}"
-                    )
-                )
-                continue
-            try:
-                with open(image_path, "rb") as f:
-                    file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
-
-                image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
-            except Exception as e:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Error decoding image for user {user.username}: {e}"
-                    )
-                )
-                image = None
+        for user in users:
+            image = download_image_from_url(user.profile_image_url)
 
             if image is None:
                 self.stdout.write(
-                    self.style.ERROR(
-                        f"Could not read or decode image for user {user.username} at path: {image_path}"
-                    )
+                    self.style.ERROR(f"Failed to download or decode image for user {user.username}")
                 )
                 continue
 
@@ -92,15 +80,11 @@ class Command(BaseCommand):
 
         if not embeddings:
             self.stdout.write(
-                self.style.ERROR(
-                    "No faces were detected in any of the images. Model not created."
-                )
+                self.style.ERROR("No faces were detected in any images. Model not saved.")
             )
             return
 
-        knn_clf = KNeighborsClassifier(
-            n_neighbors=1, algorithm="ball_tree", weights="distance"
-        )
+        knn_clf = KNeighborsClassifier(n_neighbors=1, algorithm="ball_tree", weights="distance")
         knn_clf.fit(embeddings, labels)
 
         model_dir = os.path.join(settings.BASE_DIR, "face_models")
@@ -117,6 +101,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Model training complete! {len(labels)} faces processed. Models saved in {model_dir}"
+                f"Training complete! {len(labels)} faces processed. Models saved in {model_dir}"
             )
         )

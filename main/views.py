@@ -366,3 +366,17 @@ def patient_details_view(request, user_id):
         'patient_surgeries': PatientSurgery.objects.filter(patient=patient_user.patient_profile),
     }
     return render(request, 'patient_details.html', context)
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.core.management import call_command
+
+@csrf_exempt
+def train_model_trigger(request):
+    if request.method == "POST":
+        try:
+            call_command("train_face_model")
+            return JsonResponse({"status": "training started"})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Only POST allowed"}, status=405)

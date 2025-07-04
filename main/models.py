@@ -46,6 +46,7 @@ class CustomUser(AbstractUser):
     emergency_contact_phone = models.CharField(max_length=25, blank=True, verbose_name="Վստահված հեռախոսահամար")
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True, verbose_name="Պրոֆիլի նկար")
     public_profile_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, verbose_name="Հանրային ID (QR)")
+    profile_image_url = models.URLField(blank=True, null=True)  # cloud image link
     
     def __str__(self): 
         return self.get_full_name() or self.username
