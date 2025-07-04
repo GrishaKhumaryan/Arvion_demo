@@ -18,12 +18,42 @@ def train_model_action(modeladmin, request, queryset):
 class CustomUserAdmin(UserAdmin):
     list_display = (
         "username", "email", "first_name", "last_name",
-        "is_staff", "date_of_birth", "gender", "phone_number",
+        "is_staff", "is_superuser", "is_active",
     )
-    list_filter = ("is_staff", "is_superuser", "gender", "is_active")
-    search_fields = ("username", "email", "first_name", "last_name", "phone_number")
+    list_filter = ("is_staff", "is_superuser", "is_active", "gender")
+    search_fields = ("username", "email", "first_name", "last_name")
     ordering = ("id",)
-    actions = [train_model_action]  # ← Ավելացրու մեր train գործողությունը
+
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Անձնական տվյալներ", {
+            "fields": (
+                "first_name", "last_name", "email", "date_of_birth", "gender",
+                "phone_number", "address", "emergency_contact_phone",
+                "profile_picture", "profile_image_url", "public_profile_id",
+            )
+        }),
+        ("Թույլտվություններ", {
+            "fields": (
+                "is_active", "is_staff", "is_superuser",
+                "groups", "user_permissions"
+            )
+        }),
+        ("Ամսաթվեր", {"fields": ("last_login", "date_joined")}),
+    )
+
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": (
+                "username", "email", "first_name", "last_name", "password1", "password2",
+                "date_of_birth", "gender", "phone_number", "address", "emergency_contact_phone",
+                "profile_picture", "profile_image_url",
+                "is_active", "is_staff", "is_superuser"
+            ),
+        }),
+    )
+
 
 # Մնացած մոդելների գրանցում
 admin.site.register(Gender)
