@@ -375,8 +375,14 @@ from django.core.management import call_command
 def train_model_trigger(request):
     if request.method == "POST":
         try:
+            print(f"💡 TRAIN triggered from GitHub at {datetime.datetime.now()}")
+
             call_command("train_face_model")
+
+            print("✅ Face model training finished!")
+
             return JsonResponse({"status": "training started"})
         except Exception as e:
+            print(f"❌ TRAINING ERROR: {e}")
             return JsonResponse({"error": str(e)}, status=500)
     return JsonResponse({"error": "Only POST allowed"}, status=405)
