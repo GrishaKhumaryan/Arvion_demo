@@ -13,6 +13,7 @@ cloudinary.config(
   api_key = "716419361996157", 
   api_secret = "JoS5_jjjng6JKcpF3mWnQw2STAI" 
 )
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
