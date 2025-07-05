@@ -13,17 +13,17 @@ from .models import CustomUser, PatientCondition, PatientMedication, PatientSurg
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 import json
-import datetime # Ավելացվել է այս import-ը train_model_trigger-ի համար
+import datetime
 from .models import (
-    CustomUser, 
-    DoctorProfile, 
-    PatientProfile, 
-    Gender, 
+    CustomUser,
+    DoctorProfile,
+    PatientProfile,
+    Gender,
     BloodGroup,
-    Condition, 
-    Medication, 
-    Surgery, 
-    Allergy, 
+    Condition,
+    Medication,
+    Surgery,
+    Allergy,
     PatientCondition,
     PatientMedication,
     PatientSurgery
@@ -35,7 +35,7 @@ def register_view(request):
         return render(request, "register.html")
 
     context = {"form_data": request.POST}
-    
+
     try:
         role = request.POST.get("role")
         first_name = request.POST.get("first_name", "").strip()
@@ -44,17 +44,17 @@ def register_view(request):
         password = request.POST.get("password")
         password2 = request.POST.get("password2")
         gender_name = request.POST.get("gender")
-        date_of_birth_str = request.POST.get("date_of_birth") 
+        date_of_birth_str = request.POST.get("date_of_birth")
         specialty = request.POST.get("specialty", "")
 
         if not all([role, first_name, last_name, email, password, gender_name, date_of_birth_str]):
             messages.error(request, "Խնդրում ենք լրացնել բոլոր պարտադիր դաշտերը։")
             return render(request, "register.html", context)
-        
+
         if password != password2:
             messages.error(request, "Գաղտնաբառերը չեն համընկնում։")
             return render(request, "register.html", context)
-            
+
         if len(password) < 8:
             messages.error(request, "Գաղտնաբառը պետք է բաղկացած լինի առնվազն 8 նիշից։")
             return render(request, "register.html", context)
@@ -71,11 +71,10 @@ def register_view(request):
             gender_obj, _ = Gender.objects.get_or_create(name=gender_name)
 
             user = CustomUser.objects.create_user(
-                username=email, 
+                username=email,
                 email=email,
                 password=password
             )
-
             user.first_name = first_name
             user.last_name = last_name
             user.date_of_birth = date_of_birth_str
@@ -88,26 +87,22 @@ def register_view(request):
                     specialty=specialty,
                     license_number=f"TEMP-{user.id}"
                 )
-            else: 
+            else:
                 PatientProfile.objects.create(user=user)
-        
         messages.success(request, "Դուք հաջողությամբ գրանցվել եք։ Այժմ կարող եք մուտք գործել։")
         return redirect("login")
-
     except IntegrityError as e:
         print("----------- INTEGRITY ERROR -----------")
         print(e)
         print("---------------------------------------")
         messages.error(request, "Գրանցման սխալ: Հնարավոր է՝ տվյալները կրկնվում են։")
         return render(request, "register.html", context)
-        
     except ValidationError as e:
         print("----------- VALIDATION ERROR -----------")
-        print(e.message_dict) 
+        print(e.message_dict)
         print("----------------------------------------")
         messages.error(request, f"Տվյալների սխալ։ Խնդրում ենք ստուգել լրացված դաշտերը։ {e.messages[0]}")
         return render(request, "register.html", context)
-        
     except Exception as e:
         print("----------- GENERIC EXCEPTION -----------")
         print(f"EXCEPTION TYPE: {type(e).__name__}")
@@ -116,6 +111,7 @@ def register_view(request):
         print("---------------------------------------")
         messages.error(request, "Տեղի ունեցավ անսպասելի համակարգային սխալ։")
         return render(request, "register.html", context)
+
 
 def login_page_view(request):
     return render(request, "login.html")
@@ -159,52 +155,37 @@ def settings_view(request):
     user_to_update = request.user
     patient_profile = getattr(user_to_update, "patient_profile", None)
     doctor_profile = getattr(user_to_update, "doctor_profile", None)
-
     if request.method == "POST":
         try:
             with transaction.atomic():
-                # Step 1: Update user text fields
                 user_to_update.first_name = request.POST.get("first_name", user_to_update.first_name)
                 user_to_update.last_name = request.POST.get("last_name", user_to_update.last_name)
                 user_to_update.date_of_birth = request.POST.get("date_of_birth") or None
                 user_to_update.gender_id = request.POST.get("gender") or None
                 user_to_update.phone_number = request.POST.get("phone_number", user_to_update.phone_number)
-                user_to_update.emergency_contact_phone = request.POST.get("emergency_contact_phone", user_to_update.emergency_contact_phone)
+                user_to_update.emergency_contact_phone = request.POST.get("emergency_contact_phone",
+                                                                          user_to_update.emergency_contact_phone)
                 user_to_update.address = request.POST.get("address", user_to_update.address)
-                
-                # Step 2: Handle profile picture upload
                 if "profile_picture" in request.FILES:
                     user_to_update.profile_picture = request.FILES["profile_picture"]
-                
-                # Step 3: First save to upload the image to Cloudinary
-                # Առաջին պահպանումը վերբեռնում է նկարը Cloudinary և թարմացնում է մյուս դաշտերը։
                 user_to_update.save()
-
-                # Step 4: After saving, get the Cloudinary URL and save it to the `profile_image_url` field
-                # Առաջին պահպանումից հետո .url ատրիբուտը արդեն կպարունակի Cloudinary-ի հղումը։
                 if user_to_update.profile_picture:
-                    # We check if the URL needs updating to avoid a redundant database write.
-                    # Ստուգում ենք՝ արդյոք URL-ը պետք է թարմացվի, որպեսզի զուր չպահպանենք։
                     if user_to_update.profile_image_url != user_to_update.profile_picture.url:
                         user_to_update.profile_image_url = user_to_update.profile_picture.url
-                        # Second, efficient save just for the URL field.
-                        # Երկրորդ, արդյունավետ պահպանում՝ միայն URL դաշտը թարմացնելու համար։
                         user_to_update.save(update_fields=['profile_image_url'])
-
-                # Step 5: Update related profiles (Doctor/Patient)
                 if doctor_profile:
                     doctor_profile.specialty = request.POST.get("specialty", doctor_profile.specialty)
                     doctor_profile.license_number = request.POST.get("license_number", doctor_profile.license_number)
                     doctor_profile.workplace = request.POST.get("workplace", doctor_profile.workplace)
                     doctor_profile.biography = request.POST.get("biography", doctor_profile.biography)
                     doctor_profile.save()
-                
+
                 if patient_profile:
                     patient_profile.blood_group_id = request.POST.get("blood_group") or None
                     patient_profile.weight_kg = request.POST.get("weight_kg") or None
                     patient_profile.height_cm = request.POST.get("height_cm") or None
                     patient_profile.other_notes = request.POST.get("other_notes", patient_profile.other_notes)
-                    
+
                     allergies_text = request.POST.get("allergies_text", "")
                     allergy_names = [name.strip() for name in allergies_text.split(',') if name.strip()]
                     allergy_objs = []
@@ -213,21 +194,21 @@ def settings_view(request):
                         allergy_objs.append(obj)
                     patient_profile.allergies.set(allergy_objs)
 
-                    PatientCondition.objects.filter(patient=patient_profile).delete() 
+                    PatientCondition.objects.filter(patient=patient_profile).delete()
                     conditions_text = request.POST.get("conditions_text", "")
                     condition_names = [name.strip() for name in conditions_text.split(',') if name.strip()]
                     for name in condition_names:
                         condition_obj, _ = Condition.objects.get_or_create(name=name.capitalize())
                         PatientCondition.objects.create(patient=patient_profile, condition=condition_obj)
 
-                    PatientMedication.objects.filter(patient=patient_profile).delete() 
+                    PatientMedication.objects.filter(patient=patient_profile).delete()
                     medications_text = request.POST.get("medications_text", "")
                     medication_names = [name.strip() for name in medications_text.split(',') if name.strip()]
                     for name in medication_names:
                         med_obj, _ = Medication.objects.get_or_create(name=name.capitalize())
                         PatientMedication.objects.create(patient=patient_profile, medication=med_obj)
 
-                    PatientSurgery.objects.filter(patient=patient_profile).delete() 
+                    PatientSurgery.objects.filter(patient=patient_profile).delete()
                     surgeries_text = request.POST.get("surgeries_text", "")
                     surgery_names = [name.strip() for name in surgeries_text.split(',') if name.strip()]
                     for name in surgery_names:
@@ -238,7 +219,7 @@ def settings_view(request):
 
             messages.success(request, "Ձեր տվյալները հաջողությամբ թարմացվել են։")
             return redirect("settings")
-        
+
         except Exception as e:
             messages.error(request, f"Տվյալները պահպանելիս տեղի ունեցավ սխալ: {e}")
 
@@ -249,12 +230,16 @@ def settings_view(request):
     if patient_profile:
         context.update({
             "p_allergies_str": ", ".join([a.name for a in patient_profile.allergies.all()]),
-            "p_conditions_str": ", ".join([pc.condition.name for pc in PatientCondition.objects.filter(patient=patient_profile)]),
-            "p_medications_str": ", ".join([pm.medication.name for pm in PatientMedication.objects.filter(patient=patient_profile)]),
-            "p_surgeries_str": ", ".join([ps.surgery.name for ps in PatientSurgery.objects.filter(patient=patient_profile)]),
+            "p_conditions_str": ", ".join(
+                [pc.condition.name for pc in PatientCondition.objects.filter(patient=patient_profile)]),
+            "p_medications_str": ", ".join(
+                [pm.medication.name for pm in PatientMedication.objects.filter(patient=patient_profile)]),
+            "p_surgeries_str": ", ".join(
+                [ps.surgery.name for ps in PatientSurgery.objects.filter(patient=patient_profile)]),
         })
-    
-    return render(request, "settings.html", context)    
+
+    return render(request, "settings.html", context)
+
 
 def arvion(request):
     return render(request, "arvion.html")
@@ -287,35 +272,51 @@ def qr_code_view(request):
     )
 
     qr_image = qrcode.make(profile_url)
-    
+
     buffer = BytesIO()
     qr_image.save(buffer, format="PNG")
     qr_image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    
+
     data_uri = f"data:image/png;base64,{qr_image_base64}"
 
     context = {
         'qr_image_data_uri': data_uri,
-        'profile_url': profile_url 
+        'profile_url': profile_url
     }
-    
+
     return render(request, 'qr_code.html', context)
+
 
 def public_profile_view(request, profile_id):
     profile_user = get_object_or_404(CustomUser, public_profile_id=profile_id)
-    
+
+    if not hasattr(profile_user, "patient_profile"):
+        messages.error(request, "Հիվանդի պրոֆիլը գոյություն չունի։")
+        return redirect("arvion")
+
     context = {
-        'profile_user': profile_user,
+        "patient": profile_user,
+        "patient_conditions": PatientCondition.objects.filter(
+            patient=profile_user.patient_profile
+        ),
+        "patient_medications": PatientMedication.objects.filter(
+            patient=profile_user.patient_profile
+        ),
+        "patient_surgeries": PatientSurgery.objects.filter(
+            patient=profile_user.patient_profile
+        ),
     }
-    
-    return render(request, 'public_profile.html', context)
-    
+
+    return render(request, "patient_details.html", context)
+
+
 def find_hospital(request):
     context = {
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
-        'user': request.user 
+        'user': request.user
     }
     return render(request, 'find_hospital.html', context)
+
 
 def recognize_face(image_data):
     import cv2
@@ -323,7 +324,7 @@ def recognize_face(image_data):
     import numpy as np
     from .management.commands.train_face_model import extract_embedding
     model_dir = os.path.join(settings.BASE_DIR, 'face_models')
-    
+
     model_path = os.path.join(model_dir, "face_classifier.pkl")
     if not os.path.exists(model_path):
         return None, "Մոդելը դեռ մարզված չէ։"
@@ -339,14 +340,15 @@ def recognize_face(image_data):
         knn_clf = pickle.load(f)
 
     closest_distances = knn_clf.kneighbors([embedding], n_neighbors=1)
-    
+
     distance_threshold = 0.6
-    
+
     if closest_distances[0][0][0] <= distance_threshold:
         predicted_user_id = knn_clf.predict([embedding])[0]
         return predicted_user_id, "Ճանաչումը հաջողվեց։"
     else:
         return None, "Դեմքը չի ճանաչվել (համընկնում չի գտնվել բազայում)։"
+
 
 @login_required
 def search_patient_by_photo(request):
@@ -360,9 +362,9 @@ def search_patient_by_photo(request):
             return redirect('search_patient_by_photo')
 
         uploaded_file = request.FILES['patient_photo']
-        
+
         user_id, message_text = recognize_face(uploaded_file)
-        
+
         if user_id:
             return redirect('patient_details', user_id=user_id)
         else:
@@ -379,7 +381,7 @@ def patient_details_view(request, user_id):
         return redirect('profile')
 
     patient_user = get_object_or_404(CustomUser, id=user_id, patient_profile__isnull=False)
-    
+
     context = {
         'patient': patient_user,
         'patient_conditions': PatientCondition.objects.filter(patient=patient_user.patient_profile),
@@ -388,8 +390,10 @@ def patient_details_view(request, user_id):
     }
     return render(request, 'patient_details.html', context)
 
+
 from django.views.decorators.csrf import csrf_exempt
 from django.core.management import call_command
+
 
 @csrf_exempt
 def train_model_trigger(request):

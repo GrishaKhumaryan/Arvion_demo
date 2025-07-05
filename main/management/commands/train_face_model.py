@@ -8,14 +8,11 @@ from main.models import CustomUser
 
 
 def extract_embedding(image):
-    """Դեմքի 468 կետերի կոորդինատները վերադարձնող ֆունկցիա"""
-    # Heavy imports are done inside the function
     import cv2
     import mediapipe as mp
-    
     mp_face_mesh = mp.solutions.face_mesh
     with mp_face_mesh.FaceMesh(
-        static_image_mode=True, max_num_faces=1, min_detection_confidence=0.5
+            static_image_mode=True, max_num_faces=1, min_detection_confidence=0.5
     ) as face_mesh:
         results = face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         if not results.multi_face_landmarks:
@@ -23,12 +20,12 @@ def extract_embedding(image):
         landmarks = results.multi_face_landmarks[0].landmark
         return np.array([(lm.x, lm.y, lm.z) for lm in landmarks]).flatten()
 
+
 def download_image_from_url(url):
     try:
-        response = requests.get(url, timeout=10) # Տանք մի փոքր ավելի շատ ժամանակ
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
-        # Heavy import is done inside the function
         import cv2
         image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         return image
@@ -36,14 +33,13 @@ def download_image_from_url(url):
         print(f"Couldn't load image from {url}: {e}")
         return None
 
+
 class Command(BaseCommand):
     help = "Trains the face recognition model using profile picture URLs from the database."
 
     def handle(self, *args, **options):
-        # ԲՈԼՈՐ ԾԱՆՐ ԳՐԱԴԱՐԱՆՆԵՐԸ IMPORT ԵՆՔ ԱՆՈՒՄ ԱՅՍՏԵՂ
-        # Սա երաշխավորում է, որ դրանք կկանչվեն միայն հրամանը գործարկելիս
         from sklearn.neighbors import KNeighborsClassifier
-        
+
         self.stdout.write(
             self.style.SUCCESS("Starting face recognition model training using URLs...")
         )
@@ -88,27 +84,26 @@ class Command(BaseCommand):
 
         if not embeddings:
             self.stdout.write(
-                self.style.ERROR("No faces were detected in any of the provided images. Model was not trained or saved.")
+                self.style.ERROR(
+                    "No faces were detected in any of the provided images. Model was not trained or saved.")
             )
             return
-            
-        # n_neighbors-ը չի կարող մեծ լինել նմուշների քանակից
-        k = min(len(labels), 3) # Ընտրում ենք հարևանների քանակը, բայց ոչ ավել քան նմուշներն են
+
+        k = min(len(labels), 3)
         if k == 0:
             self.stdout.write(self.style.ERROR("No samples to train on. Aborting."))
             return
-            
-        # Եթե ընդամենը 1 նմուշ կա, 1 հարևան ենք օգտագործում
+
         if len(set(labels)) < k:
-             k = len(set(labels))
-        
+            k = len(set(labels))
+
         self.stdout.write(f"Training KNN model with {k} neighbor(s)...")
         knn_clf = KNeighborsClassifier(n_neighbors=k, algorithm="ball_tree", weights="distance")
         knn_clf.fit(embeddings, labels)
 
         model_dir = os.path.join(settings.BASE_DIR, "face_models")
         os.makedirs(model_dir, exist_ok=True)
-        
+
         model_path = os.path.join(model_dir, "face_classifier.pkl")
         with open(model_path, "wb") as f:
             pickle.dump(knn_clf, f)
