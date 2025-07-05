@@ -54,10 +54,12 @@ body {
   font-weight: 700;
   text-decoration: none;
   color: var(--text-primary);
-  height: 10px;
-  width: auto;
 }
 
+.logo-img {
+    height: 32px;
+}
+      
 .header-user-avatar {
   width: 38px;
   height: 38px;
@@ -274,6 +276,7 @@ body {
    ========================================================================== */
 
 @media (max-width: 992px) {
+    
   .page-main {
     flex-direction: column; /* Sidebar-ը և Content-ը դարձնում ենք իրար տակ */
     gap: 20px;
