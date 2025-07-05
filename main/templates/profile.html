@@ -54,7 +54,7 @@
                 <div class="info-item">
                     <span class="label">Արյան խումբ</span>
                     <span class="value">
-                        {{ user.patient_profile.blood_group.group_name|default_if_none:'<span class="not-specified">Նշված չէ</span>'|safe }}
+                        {% if user.patient_profile.blood_group %}{{ user.patient_profile.blood_group.group_name }}{% else %}<span class="not-specified">Նշված չէ</span>{% endif %}
                     </span>
                 </div>
                 <div class="info-item">

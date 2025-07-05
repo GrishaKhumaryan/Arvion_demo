@@ -37,7 +37,7 @@
 
           {% if messages %}<ul class="messages">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
 
-          <div class="form-section">
+          <div class="form-section"> 
               <h2 class="form-section-title">Անձնական և կոնտակտային տվյալներ</h2>
               <div class="form-grid">
                   <div class="form-group" style="margin-top:0;"><label for="id_first_name">Անուն</label><input type="text" id="id_first_name" name="first_name" class="form-input" value="{{ user.first_name|default_if_none:'' }}"></div>
