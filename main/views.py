@@ -340,7 +340,7 @@ def recognize_face(image_data):
 
     closest_distances = knn_clf.kneighbors([embedding], n_neighbors=1)
     
-    distance_threshold = 1.2
+    distance_threshold = 0.6
     
     if closest_distances[0][0][0] <= distance_threshold:
         predicted_user_id = knn_clf.predict([embedding])[0]
