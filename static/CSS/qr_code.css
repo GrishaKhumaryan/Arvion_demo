@@ -1,6 +1,6 @@
       :root {
         --primary-bg: #043873; --secondary-bg: #0a2a54; --text-primary: #ffffff;
-        --text-secondary: #c0c8d4; --border-color: rgba(255, 255, 255, 0.15);
+        --text-secondary: #c0c8d4; --border-color: rgba(255, 255, 255, 1);
         --accent-color: #58a6ff; --button-primary: #58a6ff;
       }
       * { margin: 0; padding: 0; box-sizing: border-box; }
