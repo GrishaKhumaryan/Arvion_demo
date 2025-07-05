@@ -33,7 +33,7 @@
             <li><a href="https://t.me/Karen12321"><i class="fa-solid fa-microchip"></i> NFC քարտեր</a></li>
             <li><a href="{% url 'find_hospital' %}"><i class="fa-solid fa-hospital"></i> Որոնել հիվանդանոց</a></li>
             {% if user.doctor_profile %}
-            <li><a href="{% url 'search_patient_by_photo' %}"><i class="fa-solid fa-user-magnifying-glass"></i> Որոնել պացիենտ</a></li>
+            <li><a href="{% url 'search_patient_by_photo' %}"><i class="fa-solid fa-user-magnifying-glass" style="height: 16px;"></i> Որոնել պացիենտ</a></li>
             {% endif %}
             <li><a href="{% url 'settings' %}"><i class="fa-solid fa-gear"></i> Կարգավորումներ</a></li>
             <li><a href="{% url 'logout' %}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Ելք</a></li>
