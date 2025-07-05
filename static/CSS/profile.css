@@ -104,11 +104,6 @@
         }
 
         .header-user-info { display: none; }
-        .notification-bell {
-            font-size: 1.3rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-        }
         
         .info-grid .info-item {
             grid-template-columns: 1fr; 
