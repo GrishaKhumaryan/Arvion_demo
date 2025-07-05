@@ -140,17 +140,6 @@ def logout_view(request):
 
 
 @login_required
-def profile_view(request):
-    context = {}
-    if hasattr(request.user, 'patient_profile'):
-        patient_profile = request.user.patient_profile
-        context['patient_conditions'] = PatientCondition.objects.filter(patient=patient_profile)
-        context['patient_medications'] = PatientMedication.objects.filter(patient=patient_profile)
-        context['patient_surgeries'] = PatientSurgery.objects.filter(patient=patient_profile)
-    return render(request, "profile.html", context)
-
-
-@login_required
 def settings_view(request):
     user_to_update = request.user
     patient_profile = getattr(user_to_update, "patient_profile", None)
@@ -373,7 +362,19 @@ def search_patient_by_photo(request):
 
     return render(request, 'search_patient_by_photo.html')
 
-
+@login_required
+def profile_view(request):
+    context = {
+        'user': request.user
+    }
+    if hasattr(request.user, "patient_profile"):
+        patient_profile = request.user.patient_profile
+        context.update({
+            'patient_conditions': PatientCondition.objects.filter(patient=patient_profile).select_related('condition'),
+            'patient_medications': PatientMedication.objects.filter(patient=patient_profile).select_related('medication'),
+            'patient_surgeries': PatientSurgery.objects.filter(patient=patient_profile).select_related('surgery'),
+        })
+    return render(request, 'profile.html', context)
 @login_required
 def patient_details_view(request, user_id):
     if not hasattr(request.user, 'doctor_profile'):
