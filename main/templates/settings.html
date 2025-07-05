@@ -46,10 +46,11 @@
                   <div class="form-group" style="margin-top:0;">
                       <label for="id_gender">Սեռ</label>
                       <select name="gender" id="id_gender" class="form-select">
-                          <option value="">Իգական</option>
-                          <option value="">Արական</optio>
+                        <option value="" style="color: #000000">---------</option>
+                          <option style="color: #000000" value="">Իգական</option>
+                          <option style="color: #000000" value="">Արական</optio>
                           {% for gender in all_genders %}
-                            <option value="{{ gender.id }}" {% if user.gender.id == gender.id %}selected{% endif %}>{{ gender.name }}</option>
+                            <option style="color: #000000" value="{{ gender.id }}" {% if user.gender.id == gender.id %}selected{% endif %}>{{ gender.name }}</option>
                           {% endfor %}
                       </select>
                   </div>
@@ -62,21 +63,14 @@
           <div class="form-section">
               <h2 class="form-section-title">Բժշկական տվյալներ</h2>
               <div class="form-grid">
-                  <div class="form-group" style="margin-top:0;">
-                      <label for="id_blood_group">Արյան խումբ</label>
-                      <select name="blood_group" id="id_blood_group" class="form-select">
-                        <option value="">I+</option>
-                        <option value="">II−</option>
-                        <option value="">III+</option>
-                        <option value="">IV−</option>
-                        <option value="">I-</option>
-                        <option value="">II+</option>
-                        <option value="">III-</option>
-                        <option value="">IV+</option>
-                        {% for bg in all_blood_groups %}
-                        <option value="{{ bg.id }}" {% if user.patient_profile.blood_group.id == bg.id %}selected{% endif %}>{{ bg.group_name }}</option>
-                        {% endfor %}
-                      </select>
+                  <select name="blood_group" id="id_blood_group" class="form-select" >
+                            <option value="" style="color: #000000">---------</option> 
+                            {% for bg in all_blood_groups %}
+                                <option style="color: #000000" value="{{ bg.id }}" {% if user.patient_profile.blood_group.id == bg.id %}selected{% endif %}>
+                                    {{ bg.group_name }}
+                                </option >
+                            {% endfor %}
+                        </select>
                   </div>
                   <div class="form-group" style="margin-top:0;"><label for="id_weight_kg">Քաշ (կգ)</label><input type="number" step="0.1" id="id_weight_kg" name="weight_kg" class="form-input" value="{{ user.patient_profile.weight_kg|stringformat:'.2f'|default_if_none:'' }}" placeholder="Օր.՝ 75.50"></div>
                   <div class="form-group" style="margin-top:0;"><label for="id_height_cm">Հասակ (սմ)</label><input type="number" step="0.1" id="id_height_cm" name="height_cm" class="form-input" value="{{ user.patient_profile.height_cm|stringformat:'.2f'|default_if_none:'' }}" placeholder="Օր.՝ 180.0"></div>
